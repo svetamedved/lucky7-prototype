@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Lucky7 — Music. Luck. Texas.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          gold:  { DEFAULT: '#FFB627', hot: '#FFCC4D', dim: '#A87A1A', deep: '#7A5510' },
+          ink:   { DEFAULT: '#0A0A0F', surface: '#16161F', card: '#1E1E2A', line: '#2A2A38' },
+          flame: { DEFAULT: '#E53E3E', deep: '#9B1C1C' },
+          win:   '#10B981',
+          mute:  '#94A3B8',
+          dim:   '#64748B',
+        },
+        fontFamily: {
+          sans:    ['Inter', 'system-ui', 'sans-serif'],
+          display: ['"Bebas Neue"', 'Impact', 'sans-serif'],
+          serif:   ['"Playfair Display"', 'Georgia', 'serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html, body { background: #0A0A0F; color: #F8FAFC; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  /* Backdrop radial glow */
+  .bg-stage {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(255,182,39,0.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 30%, rgba(229,62,62,0.08), transparent 60%),
+      radial-gradient(700px 400px at 0% 80%, rgba(255,182,39,0.06), transparent 60%),
+      #0A0A0F;
+  }
+  /* Lucky 7 logo accent */
+  .text-stroke-gold {
+    -webkit-text-stroke: 1px #FFB627;
+    color: transparent;
+  }
+  /* Shimmer for hero CTA */
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .shimmer {
+    background: linear-gradient(110deg, #FFB627 25%, #FFE7A0 50%, #FFB627 75%);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+    color: #0A0A0F;
+  }
+  /* Reel spin */
+  @keyframes reelSpin { 0% { transform: translateY(0); } 100% { transform: translateY(-2400px); } }
+  .reel-spinning .reel-strip { animation: reelSpin 0.4s linear infinite; }
+  .reel-strip { transition: transform 0.7s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+  /* Pulse glow on win */
+  @keyframes goldPulse { 0%,100% { box-shadow: 0 0 30px rgba(255,182,39,0.4), inset 0 0 0 2px rgba(255,182,39,0.5); } 50% { box-shadow: 0 0 60px rgba(255,182,39,0.8), inset 0 0 0 2px rgba(255,182,39,0.9); } }
+  .win-pulse { animation: goldPulse 1.2s ease-in-out infinite; }
+  /* Subtle card hover */
+  .track-card { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+  .track-card:hover { transform: translateY(-3px); border-color: rgba(255,182,39,0.4); box-shadow: 0 18px 40px -20px rgba(255,182,39,0.25); }
+  /* Pressed effect on big buttons */
+  .btn-press:active { transform: translateY(1px) scale(0.98); }
+  /* Scrollbar trim */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  /* Hide on mobile */
+  @media (max-width: 640px) { ::-webkit-scrollbar { width: 0; height: 0; } }
+  /* Marquee for ticker */
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .marquee-inner { animation: marquee 40s linear infinite; }
+  /* Drawer slide */
+  .drawer { transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+  .modal-back { backdrop-filter: blur(8px); }
+  /* Now-playing equalizer */
+  @keyframes eq1 { 0%,100% { height: 4px; } 50% { height: 14px; } }
+  @keyframes eq2 { 0%,100% { height: 10px; } 50% { height: 4px; } }
+  @keyframes eq3 { 0%,100% { height: 6px; } 50% { height: 16px; } }
+  .eq span { display:inline-block; width:3px; margin:0 1px; background:#FFB627; border-radius:2px; }
+  .eq span:nth-child(1){ animation: eq1 0.9s ease-in-out infinite; }
+  .eq span:nth-child(2){ animation: eq2 0.9s ease-in-out infinite; }
+  .eq span:nth-child(3){ animation: eq3 0.9s ease-in-out infinite; }
+  /* Safe-area for iPhone bottom bar */
+  .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  /* No-tap-highlight */
+  * { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body class="bg-ink text-slate-100">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ─────────────────────────────────────────────────────────────
+   DATA — Tracks, genres, prize pool
+   ───────────────────────────────────────────────────────────── */
+
+const GENRES = ['All', 'Country', 'Tejano', 'Blues', 'Rock', 'Latin', 'Indie'];
+
+// 24 Texas-flavored tracks. Each track has a unique 2-color gradient for album art.
+const TRACKS = [
+  { id: 1,  title: 'Honky Tonk Heaven',     artist: 'Cody Reaves',          genre: 'Country', price: 1.29, entries: 50,  duration: '3:42', g: ['#E53E3E','#7A2424'] },
+  { id: 2,  title: 'Cerveza Fría',          artist: 'Los Tigres del Sur',   genre: 'Tejano',  price: 1.29, entries: 50,  duration: '3:11', g: ['#F59E0B','#7C2D12'] },
+  { id: 3,  title: 'Lubbock Lights',        artist: 'Annalise Garner',      genre: 'Country', price: 0.99, entries: 35,  duration: '4:05', g: ['#FFB627','#7A5510'] },
+  { id: 4,  title: 'Brazos Blues',          artist: 'Mojo Hand Trio',       genre: 'Blues',   price: 1.29, entries: 50,  duration: '5:18', g: ['#3B82F6','#1E3A8A'] },
+  { id: 5,  title: 'I-35 Lonesome',         artist: 'Wade McCutcheon',      genre: 'Country', price: 0.99, entries: 35,  duration: '3:54', g: ['#A78BFA','#4C1D95'] },
+  { id: 6,  title: 'Mariposa',              artist: 'Selena Vega',          genre: 'Tejano',  price: 1.29, entries: 50,  duration: '3:33', g: ['#EC4899','#831843'] },
+  { id: 7,  title: 'Train to El Paso',      artist: 'Cole Buchanan',        genre: 'Country', price: 1.29, entries: 50,  duration: '4:21', g: ['#F97316','#7C2D12'] },
+  { id: 8,  title: 'Saturday Night Devil',  artist: 'Hellbenders',          genre: 'Rock',    price: 1.49, entries: 60,  duration: '3:48', g: ['#DC2626','#450A0A'] },
+  { id: 9,  title: 'Tortilla Sky',          artist: 'Las Cardinales',       genre: 'Latin',   price: 1.29, entries: 50,  duration: '3:22', g: ['#10B981','#064E3B'] },
+  { id: 10, title: 'Austin in the Rain',    artist: 'Marlon Frost',         genre: 'Indie',   price: 0.99, entries: 35,  duration: '4:12', g: ['#06B6D4','#164E63'] },
+  { id: 11, title: 'Dripping Springs',      artist: 'June Hollis',          genre: 'Indie',   price: 0.99, entries: 35,  duration: '3:29', g: ['#84CC16','#365314'] },
+  { id: 12, title: 'Frijoles & Whiskey',    artist: 'Jose Cantu',           genre: 'Tejano',  price: 1.29, entries: 50,  duration: '3:55', g: ['#F59E0B','#451A03'] },
+  { id: 13, title: 'Cowboy Mafia',          artist: 'The Sundown Boys',     genre: 'Country', price: 1.49, entries: 60,  duration: '4:02', g: ['#FFB627','#3F2A0B'] },
+  { id: 14, title: 'Tequila Reverb',        artist: 'The Crawdads',         genre: 'Blues',   price: 1.29, entries: 50,  duration: '4:48', g: ['#8B5CF6','#4C1D95'] },
+  { id: 15, title: 'Conroe Moon',           artist: 'Hattie Lane',          genre: 'Country', price: 0.99, entries: 35,  duration: '3:18', g: ['#FBBF24','#78350F'] },
+  { id: 16, title: 'Big Spring Bombshell',  artist: 'The Wild Cats',        genre: 'Rock',    price: 1.49, entries: 60,  duration: '2:58', g: ['#EF4444','#7F1D1D'] },
+  { id: 17, title: 'Marfa Lights Tonight',  artist: 'Pecos Honey',          genre: 'Indie',   price: 1.29, entries: 50,  duration: '4:33', g: ['#A855F7','#581C87'] },
+  { id: 18, title: 'Two Step Forever',      artist: 'Boots & Berenice',     genre: 'Country', price: 0.99, entries: 35,  duration: '3:11', g: ['#FB7185','#881337'] },
+  { id: 19, title: 'Pancho’s Ghost',   artist: 'Tres Lobos',           genre: 'Latin',   price: 1.29, entries: 50,  duration: '4:09', g: ['#14B8A6','#134E4A'] },
+  { id: 20, title: 'Galveston Sundown',     artist: 'Coast & Coyote',       genre: 'Indie',   price: 0.99, entries: 35,  duration: '4:24', g: ['#0EA5E9','#0C4A6E'] },
+  { id: 21, title: 'Fightin’ & Forgivin’', artist: 'Dale Hardin Jr.', genre: 'Country', price: 1.29, entries: 50, duration: '3:36', g: ['#F97316','#7C2D12'] },
+  { id: 22, title: 'Vámonos a Bailar',      artist: 'Las Cuatro',           genre: 'Tejano',  price: 1.29, entries: 50,  duration: '3:44', g: ['#F43F5E','#881337'] },
+  { id: 23, title: 'South Austin Strut',    artist: 'The Cosmic Cowboys',   genre: 'Rock',    price: 1.49, entries: 60,  duration: '3:50', g: ['#EAB308','#713F12'] },
+  { id: 24, title: 'Yellow Rose Saloon',    artist: 'Pearl Beaumont',       genre: 'Country', price: 0.99, entries: 35,  duration: '3:27', g: ['#FFB627','#7A5510'] },
+];
+
+// Weighted prize pool — drawn at PURCHASE TIME (predetermined), revealed later.
+// Symbols: '7' = jackpot row, '★' = big, 'BAR' = mid, '🍒' = small. Misses pull from a non-matching pool.
+const SYMBOL_POOL = ['7','★','BAR','🍒','♦','♣','♠','🔔'];
+function drawPrize() {
+  const r = Math.random();
+  if (r < 0.0005) return { prize: 2500, symbols: ['7','7','7'],   label: 'JACKPOT' };
+  if (r < 0.005)  return { prize: 250,  symbols: ['★','★','★'],   label: 'BIG WIN' };
+  if (r < 0.03)   return { prize: 25,   symbols: ['BAR','BAR','BAR'], label: 'NICE HIT' };
+  if (r < 0.12)   return { prize: 5,    symbols: ['🍒','🍒','🍒'], label: 'CHERRIES' };
+  if (r < 0.30)   return { prize: 1,    symbols: ['🔔','🔔','♦'],  label: 'CONSOLATION' };
+  // Loss — 3 non-matching random symbols
+  const pick = () => SYMBOL_POOL[Math.floor(Math.random()*SYMBOL_POOL.length)];
+  let a = pick(), b = pick(), c = pick();
+  // ensure not 3-match
+  if (a === b && b === c) c = SYMBOL_POOL.find(s => s !== a);
+  return { prize: 0, symbols: [a,b,c], label: 'TRY AGAIN' };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ICONS — inline SVG (Lucide-styled)
+   ───────────────────────────────────────────────────────────── */
+
+const I = ({ d, size=20, stroke=2, fill='none', className='' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+       fill={fill} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+       className={className}>{d}</svg>
+);
+const Icon = {
+  play:    p => <I {...p} d={<polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none" />} />,
+  pause:   p => <I {...p} d={<><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></>} />,
+  cart:    p => <I {...p} d={<><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></>} />,
+  user:    p => <I {...p} d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
+  gift:    p => <I {...p} d={<><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></>} />,
+  music:   p => <I {...p} d={<><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></>} />,
+  search:  p => <I {...p} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />,
+  menu:    p => <I {...p} d={<><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>} />,
+  x:       p => <I {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+  arrow:   p => <I {...p} d={<><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>} />,
+  back:    p => <I {...p} d={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>} />,
+  zap:     p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/>} />,
+  star:    p => <I {...p} d={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" stroke="none"/>} />,
+  check:   p => <I {...p} d={<polyline points="20 6 9 17 4 12"/>} />,
+  plus:    p => <I {...p} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />,
+  shield:  p => <I {...p} d={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>} />,
+  clock:   p => <I {...p} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />,
+  trophy:  p => <I {...p} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>} />,
+  ticket:  p => <I {...p} d={<><path d="M3 7v2a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><line x1="13" y1="5" x2="13" y2="19" strokeDasharray="2 2"/></>} />,
+  mail:    p => <I {...p} d={<><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>} />,
+  phone:   p => <I {...p} d={<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>} />,
+  texas:   p => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="currentColor" className={p.className}>
+      <path d="M3 4h6v3l3-1v5l4-1v4l5 0v6l-8 0-1-2-3 0-1-2-5 0z"/>
+    </svg>
+  ),
+  volume:  p => <I {...p} d={<><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></>} />,
+};
+
+/* ─────────────────────────────────────────────────────────────
+   ATOMS
+   ───────────────────────────────────────────────────────────── */
+
+const Logo = ({ size=28 }) => (
+  <div className="flex items-center gap-2 select-none">
+    <div className="relative">
+      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gold-hot to-gold-deep grid place-items-center shadow-[0_0_20px_rgba(255,182,39,0.4)]">
+        <span className="font-display text-ink text-2xl leading-none translate-y-[1px]">7</span>
+      </div>
+    </div>
+    <div className="leading-none">
+      <div className="font-display tracking-wide text-2xl">LUCKY<span className="text-gold">7</span></div>
+      <div className="text-[9px] uppercase tracking-[0.25em] text-mute">Music · Luck · Texas</div>
+    </div>
+  </div>
+);
+
+const Pill = ({ children, color='gold', className='' }) => {
+  const tones = {
+    gold:  'bg-gold/10 text-gold border-gold/30',
+    flame: 'bg-flame/10 text-flame border-flame/30',
+    win:   'bg-win/10 text-win border-win/30',
+    mute:  'bg-white/5 text-mute border-white/10',
+  };
+  return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${tones[color]} ${className}`}>{children}</span>;
+};
+
+const GoldButton = ({ children, onClick, className='', size='md', disabled=false, ...rest }) => {
+  const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2.5 text-sm', lg: 'px-6 py-3.5 text-base' };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn-press rounded-xl font-semibold ${disabled ? 'bg-white/10 text-mute cursor-not-allowed' : 'shimmer shadow-[0_8px_24px_-8px_rgba(255,182,39,0.6)]'} ${sizes[size]} ${className}`}
+      {...rest}>
+      {children}
+    </button>
+  );
+};
+const GhostButton = ({ children, onClick, className='', size='md', ...rest }) => {
+  const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2.5 text-sm', lg: 'px-6 py-3.5 text-base' };
+  return (
+    <button onClick={onClick} className={`btn-press rounded-xl font-semibold border border-white/15 hover:border-gold/50 hover:bg-white/5 text-slate-100 ${sizes[size]} ${className}`} {...rest}>
+      {children}
+    </button>
+  );
+};
+
+/* Album-art gradient tile generated from track */
+const AlbumArt = ({ track, size='md', playing=false, className='' }) => {
+  const sizes = { xs:'w-10 h-10 rounded-md text-[10px]', sm:'w-14 h-14 rounded-lg text-xs', md:'w-full aspect-square rounded-xl text-sm', lg:'w-24 h-24 rounded-xl text-base' };
+  const [a,b] = track.g;
+  return (
+    <div className={`relative overflow-hidden ${sizes[size]} ${className}`} style={{ background: `linear-gradient(135deg, ${a} 0%, ${b} 100%)` }}>
+      {/* Subtle noise / vinyl rings */}
+      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(0,0,0,0.3) 0%, transparent 50%)' }} />
+      <div className="absolute inset-0 grid place-items-center">
+        <div className="font-display tracking-widest text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] text-center px-2 leading-tight">
+          {track.artist.split(' ').slice(0,2).map((w,i)=>(<div key={i} className="leading-tight">{w}</div>))}
+        </div>
+      </div>
+      {playing && (
+        <div className="absolute bottom-1.5 right-1.5 bg-ink/70 rounded-full px-1.5 py-1 backdrop-blur eq">
+          <span/><span/><span/>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   APP ROOT
+   ───────────────────────────────────────────────────────────── */
+
+function App() {
+  // State
+  const [view, setView] = useState('home');   // 'home' | 'freeEntries' | 'artists' | 'how'
+  const [genre, setGenre] = useState('All');
+  const [query, setQuery] = useState('');
+  const [cart, setCart] = useState([]);                  // [{trackId, qty}]
+  const [points, setPoints] = useState(125);             // sweeps points
+  const [pendingEntries, setPendingEntries] = useState([]); // [{id, prize, symbols, label, source}]
+  const [history, setHistory] = useState([]);              // revealed entries + purchases
+  const [playing, setPlaying] = useState(null);             // current track id
+  const [showCart, setShowCart] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
+  const [showReveal, setShowReveal] = useState(false);
+  const [activeReveal, setActiveReveal] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  // Seed a couple of pending entries so the demo has something to reveal
+  useEffect(() => {
+    const seeded = Array.from({length: 3}, (_,i) => ({ id: `seed-${i}`, ...drawPrize(), source: 'welcome bonus' }));
+    setPendingEntries(seeded);
+  }, []);
+
+  // Toast helper
+  const flash = useCallback((msg, tone='gold') => {
+    setToast({ msg, tone, id: Date.now() });
+    setTimeout(() => setToast(t => (t && t.msg===msg ? null : t)), 2400);
+  }, []);
+
+  const cartCount = cart.reduce((s,c) => s + c.qty, 0);
+  const cartItems = cart.map(c => ({ ...c, track: TRACKS.find(t => t.id === c.trackId) }));
+  const cartSubtotal = cartItems.reduce((s,i) => s + i.qty * i.track.price, 0);
+  const cartEntries  = cartItems.reduce((s,i) => s + i.qty * i.track.entries, 0);
+
+  const addToCart = useCallback((trackId) => {
+    setCart(prev => {
+      const found = prev.find(c => c.trackId === trackId);
+      if (found) return prev.map(c => c.trackId===trackId ? {...c, qty: c.qty+1} : c);
+      return [...prev, { trackId, qty: 1 }];
+    });
+    const t = TRACKS.find(x=>x.id===trackId);
+    flash(`Added "${t.title}" — +${t.entries} entries on purchase`, 'gold');
+  }, [flash]);
+
+  const removeFromCart = useCallback((trackId) => {
+    setCart(prev => prev.filter(c => c.trackId !== trackId));
+  }, []);
+
+  const completeCheckout = useCallback(() => {
+    if (!cart.length) return;
+    // Generate pre-determined entries for each entry granted
+    const newEntries = [];
+    cartItems.forEach(ci => {
+      for (let i=0; i<ci.qty*ci.track.entries; i++) {
+        newEntries.push({ id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}-${i}`, ...drawPrize(), source: `${ci.track.title}` });
+      }
+    });
+    setPendingEntries(prev => [...prev, ...newEntries]);
+    setHistory(prev => [
+      { type: 'purchase', when: Date.now(), tracks: cartItems.map(ci => ({...ci})), entries: cartEntries, total: cartSubtotal },
+      ...prev
+    ]);
+    setCart([]);
+    setShowCart(false);
+    flash(`Purchase complete — ${cartEntries} entries added to your account`, 'win');
+  }, [cart, cartItems, cartEntries, cartSubtotal, flash]);
+
+  const revealNext = useCallback(() => {
+    if (!pendingEntries.length) { flash('No entries to reveal — earn more or buy music', 'mute'); return; }
+    setActiveReveal(pendingEntries[0]);
+    setShowReveal(true);
+  }, [pendingEntries, flash]);
+
+  const finishReveal = useCallback((entry) => {
+    setPendingEntries(prev => prev.slice(1));
+    setHistory(prev => [{ type: 'reveal', when: Date.now(), ...entry }, ...prev]);
+    if (entry.prize > 0) {
+      setPoints(p => p + entry.prize);
+      flash(`Won $${entry.prize} — added to your balance`, 'win');
+      // Confetti
+      if (window.confetti) {
+        const dur = entry.prize >= 250 ? 2500 : 1200;
+        const end = Date.now() + dur;
+        (function frame() {
+          window.confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0, y: 0.6 }, colors: ['#FFB627','#FFCC4D','#E53E3E','#FFFFFF'] });
+          window.confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1, y: 0.6 }, colors: ['#FFB627','#FFCC4D','#E53E3E','#FFFFFF'] });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      }
+    }
+  }, [flash]);
+
+  const closeReveal = useCallback(() => {
+    setShowReveal(false);
+    setActiveReveal(null);
+  }, []);
+
+  const claimFreeEntry = useCallback(() => {
+    const entry = { id: `free-${Date.now()}`, ...drawPrize(), source: 'free entry — no purchase' };
+    setPendingEntries(prev => [...prev, entry]);
+    flash('Free entry added — reveal it from your account', 'gold');
+  }, [flash]);
+
+  const currentTrack = TRACKS.find(t => t.id === playing) || null;
+
+  return (
+    <div className="bg-stage min-h-screen pb-32">
+      <TopNav
+        cartCount={cartCount}
+        pending={pendingEntries.length}
+        points={points}
+        view={view}
+        onView={setView}
+        onCart={() => setShowCart(true)}
+        onAccount={() => setShowAccount(true)}
+        onReveal={revealNext}
+      />
+
+      {view === 'home' && (
+        <>
+          <Ticker history={history} />
+          <Hero pending={pendingEntries.length} points={points} onReveal={revealNext} onBrowse={()=>{const el=document.getElementById('catalog'); el && el.scrollIntoView({behavior:'smooth'});}} onFree={()=>setView('freeEntries')} />
+          <Catalog
+            genre={genre} onGenre={setGenre}
+            query={query} onQuery={setQuery}
+            playing={playing} onPlay={setPlaying}
+            onAdd={addToCart}
+          />
+          <HowItWorks onFree={()=>setView('freeEntries')} />
+        </>
+      )}
+
+      {view === 'freeEntries' && (
+        <FreeEntriesPage onBack={()=>setView('home')} onClaim={claimFreeEntry} />
+      )}
+
+      {view === 'artists' && <ArtistsPage onBack={()=>setView('home')} />}
+
+      {view === 'how' && <HowPage onBack={()=>setView('home')} onFree={()=>setView('freeEntries')} />}
+
+      <Footer onView={setView} />
+
+      {/* Now playing */}
+      {currentTrack && <NowPlaying track={currentTrack} onClose={()=>setPlaying(null)} />}
+
+      {/* Floating reveal-entries badge */}
+      {pendingEntries.length > 0 && view==='home' && (
+        <button
+          onClick={revealNext}
+          className="fixed left-1/2 -translate-x-1/2 bottom-24 z-30 px-5 py-3 rounded-full bg-gradient-to-r from-flame to-gold shadow-[0_10px_30px_-5px_rgba(229,62,62,0.6)] btn-press flex items-center gap-2 font-semibold"
+        >
+          <Icon.gift size={18}/>
+          {pendingEntries.length} {pendingEntries.length===1?'entry':'entries'} to reveal
+          <Icon.arrow size={16}/>
+        </button>
+      )}
+
+      {showCart && (
+        <CartDrawer
+          items={cartItems}
+          subtotal={cartSubtotal}
+          totalEntries={cartEntries}
+          onClose={()=>setShowCart(false)}
+          onRemove={removeFromCart}
+          onCheckout={completeCheckout}
+        />
+      )}
+
+      {showAccount && (
+        <AccountDrawer
+          points={points}
+          pending={pendingEntries}
+          history={history}
+          onClose={()=>setShowAccount(false)}
+          onReveal={revealNext}
+        />
+      )}
+
+      {showReveal && activeReveal && (
+        <RevealModal
+          entry={activeReveal}
+          onFinish={finishReveal}
+          onClose={closeReveal}
+        />
+      )}
+
+      {toast && <Toast {...toast} />}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TOP NAV
+   ───────────────────────────────────────────────────────────── */
+
+function TopNav({ cartCount, pending, points, view, onView, onCart, onAccount, onReveal }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-ink/70 border-b border-white/5">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        <button onClick={()=>onView('home')} className="shrink-0"><Logo /></button>
+
+        <nav className="hidden md:flex items-center gap-1 ml-6">
+          {[
+            ['home', 'Music'],
+            ['freeEntries', 'Free Entries'],
+            ['artists', 'Artists'],
+            ['how', 'How It Works'],
+          ].map(([k,l]) => (
+            <button
+              key={k}
+              onClick={()=>onView(k)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${view===k ? 'text-gold bg-gold/10' : 'text-mute hover:text-slate-100 hover:bg-white/5'}`}
+            >{l}</button>
+          ))}
+        </nav>
+
+        <div className="flex-1" />
+
+        {/* Points pill */}
+        <button onClick={onAccount} className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition">
+          <Icon.zap size={14}/>
+          <span className="font-semibold tabular-nums">${points.toFixed(2)}</span>
+        </button>
+
+        {pending > 0 && (
+          <button onClick={onReveal} className="relative px-3 py-2 rounded-lg border border-flame/40 bg-flame/10 text-flame hover:bg-flame/20 transition flex items-center gap-1.5">
+            <Icon.gift size={16}/>
+            <span className="text-sm font-semibold tabular-nums">{pending}</span>
+          </button>
+        )}
+
+        <button onClick={onCart} className="relative p-2 rounded-lg hover:bg-white/5">
+          <Icon.cart size={20}/>
+          {cartCount>0 && <span className="absolute -top-0.5 -right-0.5 bg-flame text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold">{cartCount}</span>}
+        </button>
+
+        <button onClick={onAccount} className="p-2 rounded-lg hover:bg-white/5">
+          <Icon.user size={20}/>
+        </button>
+
+        <button onClick={()=>setOpen(o=>!o)} className="md:hidden p-2 rounded-lg hover:bg-white/5">
+          {open ? <Icon.x size={20}/> : <Icon.menu size={20}/>}
+        </button>
+      </div>
+
+      {open && (
+        <div className="md:hidden border-t border-white/5 bg-ink/95">
+          <div className="px-4 py-3 flex flex-col gap-1">
+            {[['home','Music'],['freeEntries','Free Entries'],['artists','Artists'],['how','How It Works']].map(([k,l]) => (
+              <button key={k} onClick={()=>{onView(k); setOpen(false);}}
+                className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${view===k?'text-gold bg-gold/10':'text-slate-200 hover:bg-white/5'}`}>{l}</button>
+            ))}
+            <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-white/5">
+              <div className="text-xs text-mute uppercase tracking-wider">Balance</div>
+              <div className="text-gold font-semibold tabular-nums">${points.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TICKER
+   ───────────────────────────────────────────────────────────── */
+
+function Ticker({ history }) {
+  const recentWins = history.filter(h => h.type==='reveal' && h.prize>0).slice(0,6);
+  const items = recentWins.length ? recentWins : [
+    { who: 'Maria L.', prize: 250, where: 'Lubbock' },
+    { who: 'D. Hernandez', prize: 25, where: 'San Antonio' },
+    { who: 'Cody R.', prize: 5, where: 'Austin' },
+    { who: 'Jules T.', prize: 2500, where: 'Houston' },
+    { who: 'Pam M.', prize: 5, where: 'Corpus' },
+    { who: 'B. Lawson', prize: 50, where: 'El Paso' },
+    { who: 'Reggie K.', prize: 1, where: 'Waco' },
+    { who: 'Vee S.', prize: 25, where: 'Galveston' },
+  ];
+  // Triple for seamless loop
+  const loop = [...items, ...items, ...items, ...items];
+  return (
+    <div className="border-y border-white/5 bg-ink-surface/40 overflow-hidden">
+      <div className="flex marquee-inner whitespace-nowrap py-2 text-sm">
+        {loop.map((w,i) => (
+          <div key={i} className="flex items-center gap-2 px-5 text-mute">
+            <Icon.trophy size={14} className="text-gold"/>
+            <span className="text-slate-200 font-medium">{w.who||'Player'}</span>
+            <span>won</span>
+            <span className="text-gold font-semibold">${w.prize}</span>
+            <span>· {w.where || 'TX'}</span>
+            <span className="text-dim">·</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HERO
+   ───────────────────────────────────────────────────────────── */
+
+function Hero({ pending, points, onReveal, onBrowse, onFree }) {
+  return (
+    <section className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-12">
+      <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 items-center">
+        <div>
+          <Pill color="gold" className="mb-5"><Icon.texas size={12}/> Made in Texas · 20,000+ tracks</Pill>
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-wide">
+            Buy a song.<br/>
+            <span className="text-gold">Reveal your luck.</span>
+          </h1>
+          <p className="mt-5 text-mute text-base sm:text-lg max-w-xl leading-relaxed">
+            Every track you buy comes with sweepstakes entries — pre-determined results, revealed when you tap.
+            Independent Texas artists get paid. You play for real cash prizes. No purchase necessary to enter.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            {pending > 0 ? (
+              <GoldButton size="lg" onClick={onReveal}>
+                <span className="inline-flex items-center gap-2"><Icon.gift size={18}/> Reveal {pending} {pending===1?'entry':'entries'}</span>
+              </GoldButton>
+            ) : (
+              <GoldButton size="lg" onClick={onBrowse}>
+                <span className="inline-flex items-center gap-2"><Icon.music size={18}/> Browse music</span>
+              </GoldButton>
+            )}
+            <GhostButton size="lg" onClick={onFree}>
+              <span className="inline-flex items-center gap-2"><Icon.ticket size={18}/> Free entry</span>
+            </GhostButton>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-mute">
+            <div className="flex items-center gap-2"><Icon.shield size={14} className="text-gold"/> Licensed & compliant</div>
+            <div className="flex items-center gap-2"><Icon.check size={14} className="text-gold"/> Pay-out by Friday</div>
+            <div className="flex items-center gap-2"><Icon.star size={14} className="text-gold"/> Indie artists, fair splits</div>
+          </div>
+        </div>
+
+        {/* Hero card — featured slot machine card */}
+        <div className="relative">
+          <div className="absolute -inset-2 bg-gradient-to-br from-gold/30 via-flame/20 to-transparent rounded-[2rem] blur-2xl opacity-60"/>
+          <div className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-ink-card to-ink-surface p-6 sm:p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <Pill color="flame">Live</Pill>
+              <div className="text-xs text-mute">Balance</div>
+            </div>
+            <div className="flex items-baseline justify-between mb-6">
+              <div className="font-display text-4xl text-gold tabular-nums">${points.toFixed(2)}</div>
+              <div className="text-mute text-sm">{pending} entries waiting</div>
+            </div>
+            {/* Faux reels preview */}
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {['7','★','BAR'].map((s,i)=>(
+                <div key={i} className="aspect-[3/4] rounded-xl border-2 border-gold/30 bg-gradient-to-b from-ink to-ink-surface grid place-items-center text-5xl text-gold font-display">{s}</div>
+              ))}
+            </div>
+            <GoldButton size="lg" className="w-full" onClick={pending>0 ? onReveal : onBrowse}>
+              {pending>0 ? 'Reveal next entry' : 'Earn entries — browse music'}
+            </GoldButton>
+            <div className="mt-4 text-center text-xs text-dim">
+              No purchase necessary. See <button onClick={onFree} className="text-gold underline">free entry rules</button>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CATALOG (genres, search, track grid)
+   ───────────────────────────────────────────────────────────── */
+
+function Catalog({ genre, onGenre, query, onQuery, playing, onPlay, onAdd }) {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return TRACKS.filter(t => {
+      if (genre !== 'All' && t.genre !== genre) return false;
+      if (!q) return true;
+      return t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q);
+    });
+  }, [genre, query]);
+
+  return (
+    <section id="catalog" className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+      <div className="flex items-end justify-between gap-4 mb-5 flex-wrap">
+        <div>
+          <h2 className="font-display text-3xl sm:text-4xl tracking-wide">The Catalog</h2>
+          <div className="text-mute text-sm mt-1">{filtered.length} tracks · entries scale with price</div>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Icon.search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-mute"/>
+          <input
+            value={query}
+            onChange={e=>onQuery(e.target.value)}
+            placeholder="Search title or artist…"
+            className="w-full pl-9 pr-3 py-2.5 bg-ink-surface border border-white/10 rounded-xl text-sm placeholder:text-dim focus:outline-none focus:border-gold/50"
+          />
+        </div>
+      </div>
+
+      {/* Genre tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {GENRES.map(g => (
+          <button
+            key={g}
+            onClick={()=>onGenre(g)}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition ${
+              genre===g
+                ? 'bg-gold text-ink border-gold'
+                : 'text-mute border-white/10 hover:border-gold/40 hover:text-slate-100'
+            }`}
+          >{g}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-5">
+        {filtered.map(t => (
+          <TrackCard key={t.id} track={t} playing={playing===t.id} onPlay={()=>onPlay(playing===t.id?null:t.id)} onAdd={()=>onAdd(t.id)} />
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-16 text-mute">No tracks match. Try a different genre or search.</div>
+      )}
+    </section>
+  );
+}
+
+function TrackCard({ track, playing, onPlay, onAdd }) {
+  return (
+    <div className="track-card rounded-2xl bg-ink-card border border-white/5 p-3 group">
+      <div className="relative">
+        <AlbumArt track={track} size="md" playing={playing}/>
+        <button
+          onClick={onPlay}
+          aria-label={playing ? 'Pause' : 'Play'}
+          className="absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition bg-ink/40"
+        >
+          <div className="w-14 h-14 rounded-full bg-gold text-ink grid place-items-center shadow-xl">
+            {playing ? <Icon.pause size={24}/> : <Icon.play size={24}/>}
+          </div>
+        </button>
+      </div>
+      <div className="mt-3">
+        <div className="font-semibold text-sm leading-tight line-clamp-1">{track.title}</div>
+        <div className="text-mute text-xs mt-0.5 line-clamp-1">{track.artist}</div>
+        <div className="flex items-center justify-between mt-3 gap-2">
+          <Pill color="gold"><Icon.gift size={10}/> +{track.entries}</Pill>
+          <button
+            onClick={onAdd}
+            className="btn-press inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-gold hover:text-ink text-sm font-semibold transition border border-white/5"
+          >
+            <Icon.plus size={14}/> ${track.price.toFixed(2)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   NOW PLAYING (sticky bottom bar)
+   ───────────────────────────────────────────────────────────── */
+
+function NowPlaying({ track, onClose }) {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    setProgress(0);
+    const id = setInterval(() => setProgress(p => (p >= 100 ? 0 : p + 0.6)), 300);
+    return () => clearInterval(id);
+  }, [track.id]);
+
+  return (
+    <div className="fixed left-0 right-0 bottom-0 z-30 pb-safe border-t border-white/10 bg-ink/85 backdrop-blur-xl">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex items-center gap-3">
+        <AlbumArt track={track} size="sm" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold truncate">{track.title}</div>
+          <div className="text-mute text-xs truncate">{track.artist} · {track.genre}</div>
+          <div className="h-1 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-gold to-flame transition-all" style={{ width: `${progress}%` }}/>
+          </div>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-mute text-xs tabular-nums w-24 justify-end">
+          {(() => {
+            const [m, s] = track.duration.split(':').map(Number);
+            const totalSec = m*60 + s;
+            const cur = Math.floor(totalSec * progress / 100);
+            const cm = Math.floor(cur/60), cs = cur % 60;
+            return `${cm}:${cs.toString().padStart(2,'0')} / ${track.duration}`;
+          })()}
+        </div>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5" aria-label="Stop">
+          <Icon.x size={18}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   REVEAL MODAL — the slot machine
+   ───────────────────────────────────────────────────────────── */
+
+function RevealModal({ entry, onFinish, onClose }) {
+  const [stage, setStage] = useState('ready'); // ready | spinning | revealed
+  const [reels, setReels] = useState(['?','?','?']);
+  const [tick, setTick] = useState(0); // cycles symbols during spin
+  const stoppedRef = useRef([false,false,false]);
+
+  // Cycle symbols every 90ms while any reel is still spinning
+  useEffect(() => {
+    if (stage !== 'spinning') return;
+    const id = setInterval(() => setTick(t => t + 1), 90);
+    return () => clearInterval(id);
+  }, [stage]);
+
+  const reveal = () => {
+    if (stage !== 'ready') return;
+    stoppedRef.current = [false,false,false];
+    setStage('spinning');
+    // Stagger reel stops to feel like a real slot
+    [0,1,2].forEach((i) => {
+      setTimeout(() => {
+        setReels(prev => {
+          const next = [...prev];
+          next[i] = entry.symbols[i];
+          return next;
+        });
+        stoppedRef.current[i] = true;
+        if (i===2) {
+          setTimeout(() => {
+            setStage('revealed');
+            onFinish(entry);
+          }, 500);
+        }
+      }, 900 + i * 700);
+    });
+  };
+
+  const tone = entry.prize >= 250 ? 'jackpot' : entry.prize > 0 ? 'win' : 'lose';
+
+  return (
+    <div className="fixed inset-0 z-50 modal-back bg-ink/80 grid place-items-center p-4 overflow-y-auto" onClick={stage==='revealed' ? onClose : null}>
+      <div className="relative w-full max-w-md" onClick={e=>e.stopPropagation()}>
+        <div className={`rounded-3xl overflow-hidden border ${tone==='jackpot' ? 'border-gold win-pulse' : tone==='win' ? 'border-win/50' : 'border-white/10'} bg-gradient-to-b from-ink-card to-ink-surface shadow-2xl`}>
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 text-sm text-mute">
+              <Icon.ticket size={14}/> Entry from <span className="text-slate-200">{entry.source}</span>
+            </div>
+            {stage==='revealed' && (
+              <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5"><Icon.x size={16}/></button>
+            )}
+          </div>
+
+          {/* Reels */}
+          <div className="p-6 sm:p-8">
+            <div className="grid grid-cols-3 gap-3">
+              {reels.map((s, i) => (
+                <div key={i} className={`aspect-[3/4] rounded-2xl border-2 ${tone==='jackpot' && stage==='revealed' ? 'border-gold' : 'border-white/10'} bg-gradient-to-b from-ink to-ink-surface relative overflow-hidden`}>
+                  <div className={`absolute inset-0 grid place-items-center font-display text-6xl sm:text-7xl ${tone==='jackpot' && stage==='revealed' ? 'text-gold' : tone==='win' && stage==='revealed' ? 'text-win' : 'text-slate-100'} ${stage==='spinning' && !stoppedRef.current[i] ? 'blur-[2px]' : ''}`}>
+                    {stage==='spinning' && !stoppedRef.current[i]
+                      ? SYMBOL_POOL[(tick + i*3) % SYMBOL_POOL.length]
+                      : s}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 min-h-[80px] text-center">
+              {stage==='ready' && (
+                <>
+                  <div className="text-sm text-mute mb-3">Your result is already decided. Tap to reveal it.</div>
+                  <GoldButton size="lg" className="w-full" onClick={reveal}>
+                    <span className="inline-flex items-center gap-2"><Icon.zap size={18}/> Reveal</span>
+                  </GoldButton>
+                </>
+              )}
+              {stage==='spinning' && (
+                <div className="text-mute text-sm py-4">Revealing…</div>
+              )}
+              {stage==='revealed' && (
+                <>
+                  <div className={`font-display tracking-wider text-2xl mb-1 ${tone==='jackpot'?'text-gold':tone==='win'?'text-win':'text-mute'}`}>{entry.label}</div>
+                  {entry.prize > 0 ? (
+                    <>
+                      <div className={`font-display text-6xl ${tone==='jackpot'?'text-gold':'text-win'}`}>
+                        ${entry.prize}
+                      </div>
+                      <div className="text-mute text-sm mt-2">Added to your Lucky7 balance</div>
+                    </>
+                  ) : (
+                    <div className="text-mute text-base mt-2">No prize on this entry. More entries waiting?</div>
+                  )}
+                  <GhostButton size="md" className="w-full mt-5" onClick={onClose}>Done</GhostButton>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="px-5 py-3 border-t border-white/10 text-center text-[11px] text-dim">
+            Entries are pre-determined at purchase or claim. See official rules.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CART DRAWER
+   ───────────────────────────────────────────────────────────── */
+
+function CartDrawer({ items, subtotal, totalEntries, onClose, onRemove, onCheckout }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/70 modal-back" onClick={onClose}>
+      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-ink-surface border-l border-white/10 drawer flex flex-col" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <Icon.cart size={18} className="text-gold"/>
+            <h3 className="font-semibold">Your cart</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5"><Icon.x size={18}/></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {items.length === 0 && (
+            <div className="text-center py-16 text-mute">
+              <Icon.cart size={32} className="mx-auto mb-3 text-dim"/>
+              <div>Your cart is empty</div>
+              <div className="text-xs mt-1">Add a track to earn entries</div>
+            </div>
+          )}
+          {items.map(i => (
+            <div key={i.trackId} className="flex items-center gap-3 p-2 rounded-xl bg-ink-card border border-white/5">
+              <AlbumArt track={i.track} size="sm"/>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold truncate">{i.track.title}</div>
+                <div className="text-xs text-mute truncate">{i.track.artist}</div>
+                <div className="text-xs text-gold mt-1">+{i.track.entries * i.qty} entries · qty {i.qty}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-semibold tabular-nums">${(i.track.price*i.qty).toFixed(2)}</div>
+                <button onClick={()=>onRemove(i.trackId)} className="text-xs text-mute hover:text-flame mt-1">Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-white/10 p-5 space-y-3">
+          <div className="flex justify-between text-sm text-mute">
+            <span>Tracks</span>
+            <span className="tabular-nums">${subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-mute">Sweepstakes entries</span>
+            <span className="text-gold font-semibold tabular-nums">+{totalEntries}</span>
+          </div>
+          <div className="flex justify-between text-base font-semibold pt-2 border-t border-white/5">
+            <span>Total</span>
+            <span className="tabular-nums">${subtotal.toFixed(2)}</span>
+          </div>
+          <GoldButton size="lg" className="w-full" onClick={onCheckout} disabled={items.length===0}>
+            {items.length ? `Pay $${subtotal.toFixed(2)} · get ${totalEntries} entries` : 'Add tracks first'}
+          </GoldButton>
+          <div className="text-[11px] text-dim text-center">
+            Prototype checkout — no card required. Press to simulate purchase.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACCOUNT DRAWER
+   ───────────────────────────────────────────────────────────── */
+
+function AccountDrawer({ points, pending, history, onClose, onReveal }) {
+  const reveals = history.filter(h => h.type === 'reveal');
+  const purchases = history.filter(h => h.type === 'purchase');
+  const totalWon = reveals.reduce((s,r) => s + (r.prize||0), 0);
+  const totalSpent = purchases.reduce((s,p) => s + p.total, 0);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/70 modal-back" onClick={onClose}>
+      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-ink-surface border-l border-white/10 drawer flex flex-col" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <Icon.user size={18} className="text-gold"/>
+            <h3 className="font-semibold">Your account</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5"><Icon.x size={18}/></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {/* Balance */}
+          <div className="p-5 bg-gradient-to-br from-gold/15 to-flame/5 border-b border-white/10">
+            <div className="text-xs uppercase tracking-wider text-mute">Available balance</div>
+            <div className="font-display text-5xl text-gold tabular-nums mt-1">${points.toFixed(2)}</div>
+            <div className="flex gap-2 mt-4">
+              <GhostButton size="sm" className="flex-1">Cash out</GhostButton>
+              <GhostButton size="sm" className="flex-1">Use in-store</GhostButton>
+            </div>
+            {points >= 50 && (
+              <div className="mt-3 text-xs flex items-center gap-2 text-gold">
+                <Icon.shield size={14}/> ID verification needed to cash out over $50
+              </div>
+            )}
+          </div>
+
+          {/* Pending entries */}
+          <div className="px-5 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Entries to reveal</div>
+              <Pill color={pending.length ? 'gold' : 'mute'}>{pending.length}</Pill>
+            </div>
+            {pending.length === 0 ? (
+              <div className="text-sm text-mute">All caught up — buy a track or claim a free entry to play.</div>
+            ) : (
+              <div className="space-y-2">
+                {pending.slice(0,4).map(e => (
+                  <div key={e.id} className="flex items-center justify-between p-3 rounded-lg bg-ink-card border border-white/5">
+                    <div>
+                      <div className="text-sm font-medium">Entry · sealed</div>
+                      <div className="text-xs text-mute mt-0.5">From: {e.source}</div>
+                    </div>
+                    <Icon.gift size={18} className="text-gold"/>
+                  </div>
+                ))}
+                {pending.length > 4 && <div className="text-xs text-mute pt-1">+ {pending.length - 4} more</div>}
+                <button onClick={onReveal} className="w-full mt-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-flame to-gold text-ink font-semibold btn-press">
+                  Reveal next entry
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-2 p-5 border-b border-white/10">
+            <Stat label="Total won" value={`$${totalWon.toFixed(2)}`} tone="win"/>
+            <Stat label="Total spent" value={`$${totalSpent.toFixed(2)}`}/>
+            <Stat label="Entries revealed" value={reveals.length}/>
+            <Stat label="Purchases" value={purchases.length}/>
+          </div>
+
+          {/* History */}
+          <div className="p-5">
+            <div className="font-semibold mb-3">Recent activity</div>
+            {history.length === 0 ? (
+              <div className="text-sm text-mute">Nothing yet. Buy a track or reveal a free entry.</div>
+            ) : (
+              <div className="space-y-2">
+                {history.slice(0, 12).map((h, i) => (
+                  <HistoryRow key={i} h={h}/>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }) {
+  return (
+    <div className="rounded-xl bg-ink-card border border-white/5 p-3">
+      <div className="text-[11px] uppercase tracking-wider text-mute">{label}</div>
+      <div className={`text-lg font-semibold mt-1 tabular-nums ${tone==='win'?'text-win':'text-slate-100'}`}>{value}</div>
+    </div>
+  );
+}
+
+function HistoryRow({ h }) {
+  const when = new Date(h.when).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (h.type === 'reveal') {
+    const win = h.prize > 0;
+    return (
+      <div className="flex items-center justify-between p-2.5 rounded-lg bg-ink-card border border-white/5">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-lg grid place-items-center ${win?'bg-win/15 text-win':'bg-white/5 text-mute'}`}>
+            {win ? <Icon.trophy size={16}/> : <Icon.ticket size={16}/>}
+          </div>
+          <div>
+            <div className="text-sm font-medium">{win ? `Won $${h.prize}` : 'No prize'}</div>
+            <div className="text-xs text-mute">{h.source} · {when}</div>
+          </div>
+        </div>
+        <div className="flex gap-0.5">
+          {h.symbols.map((s,i) => <span key={i} className={`text-sm w-6 text-center ${win?'text-gold':'text-mute'}`}>{s}</span>)}
+        </div>
+      </div>
+    );
+  }
+  // purchase
+  return (
+    <div className="flex items-center justify-between p-2.5 rounded-lg bg-ink-card border border-white/5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg grid place-items-center bg-gold/15 text-gold"><Icon.music size={16}/></div>
+        <div>
+          <div className="text-sm font-medium">Purchase · ${h.total.toFixed(2)}</div>
+          <div className="text-xs text-mute">+{h.entries} entries · {when}</div>
+        </div>
+      </div>
+      <div className="text-xs text-mute">{h.tracks.length} track{h.tracks.length!==1?'s':''}</div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FREE ENTRIES (no-purchase path)
+   ───────────────────────────────────────────────────────────── */
+
+function FreeEntriesPage({ onBack, onClaim }) {
+  const [step, setStep] = useState('form'); // form | done
+  const [form, setForm] = useState({ name:'', email:'', phone:'', state:'TX', agree:false });
+  const valid = form.name.trim() && form.email.includes('@') && form.agree;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!valid) return;
+    onClaim();
+    setStep('done');
+  };
+  return (
+    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <button onClick={onBack} className="text-mute hover:text-slate-100 inline-flex items-center gap-1 text-sm mb-6">
+        <Icon.back size={16}/> Back
+      </button>
+      <Pill color="gold"><Icon.ticket size={12}/> No purchase necessary</Pill>
+      <h1 className="font-display text-4xl sm:text-5xl mt-3">Free sweepstakes entry</h1>
+      <p className="text-mute mt-3 max-w-xl">
+        You don't have to buy a thing to play. Submit this form and we'll add one free entry to your Lucky7 account.
+        Same odds, same prize pool, same fun. One free entry per person per day.
+      </p>
+
+      <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 mt-8 items-start">
+        <form onSubmit={submit} className="rounded-2xl bg-ink-card border border-white/10 p-6 space-y-4">
+          {step === 'form' && (
+            <>
+              <Field label="Full name">
+                <input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className={inputCls}/>
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Email" icon={<Icon.mail size={14}/>}>
+                  <input type="email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} className={inputCls}/>
+                </Field>
+                <Field label="Phone (optional)" icon={<Icon.phone size={14}/>}>
+                  <input value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} className={inputCls} placeholder="+1 (555) 555-5555"/>
+                </Field>
+              </div>
+              <Field label="State">
+                <select value={form.state} onChange={e=>setForm({...form, state:e.target.value})} className={inputCls}>
+                  {['TX','OK','LA','AR','NM','CO'].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </Field>
+              <label className="flex gap-3 items-start text-sm text-mute cursor-pointer">
+                <input type="checkbox" checked={form.agree} onChange={e=>setForm({...form, agree:e.target.checked})} className="mt-1 accent-gold w-4 h-4"/>
+                <span>I confirm I'm 18+ (or 21+ where required) and agree to the <a className="text-gold underline">official rules</a>.</span>
+              </label>
+              <GoldButton size="lg" className="w-full" onClick={submit} disabled={!valid}>
+                {valid ? 'Claim free entry' : 'Fill in the required fields'}
+              </GoldButton>
+              <div className="text-[11px] text-dim">
+                We use your info only to validate the entry and contact you if you win. We never sell data.
+              </div>
+            </>
+          )}
+          {step === 'done' && (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 mx-auto rounded-full bg-win/15 text-win grid place-items-center mb-4">
+                <Icon.check size={28}/>
+              </div>
+              <div className="font-display text-2xl">Entry claimed</div>
+              <p className="text-mute mt-2">Your free entry is in your account. Reveal it whenever you're ready.</p>
+              <GhostButton size="md" className="mt-6" onClick={()=>setStep('form')}>Submit another tomorrow</GhostButton>
+            </div>
+          )}
+        </form>
+
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-ink-surface p-5">
+            <div className="text-sm font-semibold mb-3">By mail</div>
+            <p className="text-sm text-mute">Hand-print your name, address, phone, email, age, and the words "Lucky7 Free Entry" on a 3"×5" card and mail to:</p>
+            <div className="mt-3 text-sm text-slate-200 leading-relaxed">
+              Lucky7 Sweepstakes<br/>
+              PO Box 7777<br/>
+              Austin, TX 78701
+            </div>
+            <div className="text-xs text-dim mt-3">One mailed entry per envelope. Must be postmarked within the promotion period.</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-ink-surface p-5">
+            <div className="flex items-center gap-2 font-semibold mb-2"><Icon.shield size={16} className="text-gold"/> Same odds, every time</div>
+            <p className="text-sm text-mute">
+              Free entries draw from the same prize pool as paid entries. Pre-determined, never tilted. That's how this is legal.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+const inputCls = "w-full px-3.5 py-2.5 bg-ink-surface border border-white/10 rounded-xl text-sm placeholder:text-dim focus:outline-none focus:border-gold/50 text-slate-100";
+
+function Field({ label, icon, children }) {
+  return (
+    <label className="block">
+      <div className="text-xs font-medium text-mute mb-1.5 flex items-center gap-1.5">{icon}{label}</div>
+      {children}
+    </label>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARTISTS PAGE
+   ───────────────────────────────────────────────────────────── */
+
+function ArtistsPage({ onBack }) {
+  const artists = Array.from(new Set(TRACKS.map(t=>t.artist))).map(name => {
+    const tracks = TRACKS.filter(t=>t.artist===name);
+    return { name, count: tracks.length, genre: tracks[0].genre, g: tracks[0].g };
+  });
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <button onClick={onBack} className="text-mute hover:text-slate-100 inline-flex items-center gap-1 text-sm mb-6"><Icon.back size={16}/> Back</button>
+      <Pill color="gold"><Icon.texas size={12}/> Independent · paid weekly</Pill>
+      <h1 className="font-display text-4xl sm:text-5xl mt-3">Texas artists, fair splits</h1>
+      <p className="text-mute mt-3 max-w-2xl">70% of every track sale goes to the artist. Refer a musician you love, get 5% of their earnings for 12 months. No labels in the middle.</p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
+        {artists.map(a => (
+          <div key={a.name} className="rounded-2xl bg-ink-card border border-white/5 p-4 hover:border-gold/30 transition">
+            <div className="aspect-square rounded-xl overflow-hidden relative mb-3" style={{ background: `linear-gradient(135deg, ${a.g[0]} 0%, ${a.g[1]} 100%)` }}>
+              <div className="absolute inset-0 grid place-items-center font-display text-3xl text-white/90 drop-shadow-md px-2 text-center">{a.name.split(' ').map((w,i)=>(<div key={i}>{w}</div>))}</div>
+            </div>
+            <div className="font-semibold text-sm">{a.name}</div>
+            <div className="text-xs text-mute">{a.count} track{a.count!==1?'s':''} · {a.genre}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-12 rounded-3xl border border-gold/20 bg-gradient-to-br from-gold/5 to-flame/5 p-8">
+        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+          <div>
+            <h3 className="font-display text-3xl">Are you a Texas songwriter?</h3>
+            <p className="text-mute mt-2 max-w-xl">Upload your original tracks. We handle the storefront, the streaming, the payouts. You keep 70%. Refer other artists and earn from their sales too.</p>
+          </div>
+          <GoldButton size="lg">Apply to upload</GoldButton>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HOW IT WORKS
+   ───────────────────────────────────────────────────────────── */
+
+function HowItWorks({ onFree }) {
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <Pill color="gold">How it works</Pill>
+        <h2 className="font-display text-4xl sm:text-5xl mt-3">Three steps. No catch.</h2>
+        <p className="text-mute mt-3">It's a music store. Buying a song earns sweepstakes entries — like McDonald's Monopoly, not a casino.</p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Step n="1" title="Buy a song" body="Pick a track from a Texas artist. Pay $0.99–$1.49. The artist gets 70%."/>
+        <Step n="2" title="Get sweepstakes entries" body="Each purchase grants 35–60 entries. Each entry has a pre-determined result."/>
+        <Step n="3" title="Reveal and win" body="Tap to reveal. Cash prizes hit your balance. Cash out or spend in-store."/>
+      </div>
+      <div className="mt-8 text-center text-sm text-mute">
+        Don't want to buy anything? <button onClick={onFree} className="text-gold underline">Get a free entry</button> — same odds, no strings.
+      </div>
+    </section>
+  );
+}
+
+function Step({ n, title, body }) {
+  return (
+    <div className="rounded-2xl bg-ink-card border border-white/5 p-6 relative">
+      <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-deep grid place-items-center font-display text-ink text-xl">{n}</div>
+      <div className="font-semibold mt-2 text-lg">{title}</div>
+      <p className="text-mute text-sm mt-2 leading-relaxed">{body}</p>
+    </div>
+  );
+}
+
+function HowPage({ onBack, onFree }) {
+  return (
+    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <button onClick={onBack} className="text-mute hover:text-slate-100 inline-flex items-center gap-1 text-sm mb-6"><Icon.back size={16}/> Back</button>
+      <Pill color="gold">How it works</Pill>
+      <h1 className="font-display text-4xl sm:text-5xl mt-3">The honest version</h1>
+      <div className="prose prose-invert mt-6 space-y-5 text-slate-200">
+        <p className="text-lg text-mute">Lucky7 is a music marketplace with a sweepstakes promotion on top. It's legally distinct from gambling. Here's exactly how.</p>
+        <Block title="It's a store first">Tracks cost real money and you get the music whether you reveal or not. Artists get paid 70% of every sale.</Block>
+        <Block title="Sweeps entries are a bonus">Every purchase comes with entries — a free perk, not the thing you're paying for. Same model as McDonald's Monopoly.</Block>
+        <Block title="Results are pre-determined">When you earn an entry, the outcome is already set. The reels just animate the reveal. You aren't playing a game of chance against a house — you're opening a sealed ticket.</Block>
+        <Block title="No purchase necessary">You can request a free entry by web form or by mail. Free entries draw from the exact same prize pool. <button onClick={onFree} className="text-gold underline">Try it</button>.</Block>
+        <Block title="Cash out, in-store credit, or play more">Winnings sit in your balance. Cash out via Stripe (ID verification required over $50), or spend at any Big Easy venue.</Block>
+        <Block title="What we don't do">No surprise fees, no auto-renewals, no clawing back winnings, no algorithmic odds-shifting based on your behavior. Same pool for everyone.</Block>
+      </div>
+    </section>
+  );
+}
+
+function Block({ title, children }) {
+  return (
+    <div className="rounded-xl bg-ink-card border border-white/5 p-5">
+      <div className="font-semibold mb-1.5">{title}</div>
+      <div className="text-mute text-sm leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FOOTER
+   ───────────────────────────────────────────────────────────── */
+
+function Footer({ onView }) {
+  return (
+    <footer className="border-t border-white/5 mt-16 pt-10 pb-12 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto grid sm:grid-cols-4 gap-8">
+        <div>
+          <Logo/>
+          <p className="text-xs text-mute mt-3 leading-relaxed">
+            A music marketplace with a no-purchase-necessary sweepstakes promotion. Operated by Big Easy Entertainment. Void where prohibited.
+          </p>
+        </div>
+        <FColumn title="Play">
+          {[['home','Music catalog'],['freeEntries','Free entry'],['how','How it works']].map(([k,l])=>(
+            <button key={k} onClick={()=>onView(k)} className="text-sm text-mute hover:text-gold block">{l}</button>
+          ))}
+        </FColumn>
+        <FColumn title="Artists">
+          <button onClick={()=>onView('artists')} className="text-sm text-mute hover:text-gold block">Apply to upload</button>
+          <a className="text-sm text-mute hover:text-gold block">Payout schedule</a>
+          <a className="text-sm text-mute hover:text-gold block">Royalty terms</a>
+        </FColumn>
+        <FColumn title="Legal">
+          <a className="text-sm text-mute hover:text-gold block">Official rules</a>
+          <a className="text-sm text-mute hover:text-gold block">Terms of service</a>
+          <a className="text-sm text-mute hover:text-gold block">Privacy</a>
+          <a className="text-sm text-mute hover:text-gold block">Responsible play</a>
+        </FColumn>
+      </div>
+      <div className="max-w-6xl mx-auto mt-10 pt-6 border-t border-white/5 text-xs text-dim flex flex-wrap justify-between gap-3">
+        <div>© 2026 Big Easy Entertainment, LLC. Austin, TX.</div>
+        <div>18+ to play · 21+ in TN, MS, AL, AZ.</div>
+      </div>
+    </footer>
+  );
+}
+
+function FColumn({ title, children }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-slate-100 font-semibold mb-3">{title}</div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TOAST
+   ───────────────────────────────────────────────────────────── */
+
+function Toast({ msg, tone }) {
+  const colors = {
+    gold: 'border-gold/40 bg-gold/10 text-gold',
+    win:  'border-win/40 bg-win/10 text-win',
+    flame:'border-flame/40 bg-flame/10 text-flame',
+    mute: 'border-white/15 bg-white/5 text-slate-100',
+  };
+  return (
+    <div className={`fixed left-1/2 -translate-x-1/2 bottom-32 z-50 px-4 py-2.5 rounded-full border backdrop-blur-md text-sm font-medium shadow-xl ${colors[tone]||colors.gold}`}>
+      {msg}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MOUNT
+   ───────────────────────────────────────────────────────────── */
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
