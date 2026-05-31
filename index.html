@@ -987,7 +987,7 @@ function Catalog({ genre, onGenre, query, onQuery, playing, onPlay, onAdd }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-5">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 mt-5">
         {filtered.map(t => (
           <TrackCard key={t.id} track={t} playing={playing===t.id} onPlay={()=>onPlay(playing===t.id?null:t.id)} onAdd={()=>onAdd(t.id)} />
         ))}
@@ -1002,29 +1002,31 @@ function Catalog({ genre, onGenre, query, onQuery, playing, onPlay, onAdd }) {
 
 function TrackCard({ track, playing, onPlay, onAdd }) {
   return (
-    <div className="track-card rounded-2xl bg-ink-card border border-white/5 p-3 group">
+    <div className="track-card rounded-xl bg-ink-card border border-white/5 p-2 group">
       <div className="relative">
         <AlbumArt track={track} size="md" playing={playing}/>
         <button
           onClick={onPlay}
           aria-label={playing ? 'Pause' : 'Play'}
-          className="absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition bg-ink/40"
+          className="absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition bg-ink/40 rounded-xl"
         >
-          <div className="w-14 h-14 rounded-full bg-gold text-ink grid place-items-center shadow-xl">
-            {playing ? <Icon.pause size={24}/> : <Icon.play size={24}/>}
+          <div className="w-9 h-9 rounded-full bg-gold text-ink grid place-items-center shadow-xl">
+            {playing ? <Icon.pause size={16}/> : <Icon.play size={16}/>}
           </div>
         </button>
       </div>
-      <div className="mt-3">
-        <div className="font-semibold text-sm leading-tight line-clamp-1">{track.title}</div>
-        <div className="text-mute text-xs mt-0.5 line-clamp-1">{track.artist}</div>
-        <div className="flex items-center justify-between mt-3 gap-2">
-          <Pill color="gold"><Icon.gift size={10}/> +{track.entries}</Pill>
+      <div className="mt-2">
+        <div className="font-semibold text-[12px] leading-tight line-clamp-1">{track.title}</div>
+        <div className="text-mute text-[10px] mt-0.5 line-clamp-1">{track.artist}</div>
+        <div className="flex items-center justify-between mt-2 gap-1">
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-gold font-medium">
+            <Icon.gift size={9}/>+{track.entries}
+          </span>
           <button
             onClick={onAdd}
-            className="btn-press inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-gold hover:text-ink text-sm font-semibold transition border border-white/5"
+            className="btn-press inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-white/5 hover:bg-gold hover:text-ink text-[11px] font-semibold transition border border-white/5"
           >
-            <Icon.plus size={14}/> ${track.price.toFixed(2)}
+            <Icon.plus size={11}/> ${track.price.toFixed(2)}
           </button>
         </div>
       </div>
