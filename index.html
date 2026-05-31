@@ -75,9 +75,49 @@
   ::-webkit-scrollbar-track { background: transparent; }
   /* Hide on mobile */
   @media (max-width: 640px) { ::-webkit-scrollbar { width: 0; height: 0; } }
-  /* Marquee for ticker */
+  /* Marquee for ticker — flashy */
   @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-  .marquee-inner { animation: marquee 40s linear infinite; }
+  .marquee-inner { animation: marquee 22s linear infinite; will-change: transform; }
+  .marquee-inner:hover { animation-play-state: paused; }
+  /* Prize amount pulse + glow */
+  @keyframes prizePulse {
+    0%, 100% { text-shadow: 0 0 6px rgba(255,182,39,0.5), 0 0 14px rgba(255,182,39,0.25); transform: scale(1); }
+    50%      { text-shadow: 0 0 16px rgba(255,182,39,0.95), 0 0 32px rgba(255,182,39,0.55); transform: scale(1.06); }
+  }
+  .prize-glow { animation: prizePulse 1.4s ease-in-out infinite; display: inline-block; }
+  /* Animated background sheen behind the ticker */
+  @keyframes tickerSheen {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .ticker-bg {
+    background: linear-gradient(90deg,
+      rgba(255,182,39,0.10) 0%,
+      rgba(229,62,62,0.07) 25%,
+      rgba(255,182,39,0.14) 50%,
+      rgba(229,62,62,0.07) 75%,
+      rgba(255,182,39,0.10) 100%);
+    background-size: 200% 100%;
+    animation: tickerSheen 7s linear infinite;
+  }
+  /* Icon wiggle */
+  @keyframes iconWiggle {
+    0%, 100% { transform: rotate(-12deg) scale(1); }
+    50%      { transform: rotate(12deg)  scale(1.18); }
+  }
+  .icon-wiggle { animation: iconWiggle 1.3s ease-in-out infinite; display: inline-flex; }
+  /* Sparkle separator twinkle */
+  @keyframes sparkleTwinkle {
+    0%, 100% { opacity: 0.5; transform: scale(0.85) rotate(0deg); }
+    50%      { opacity: 1;   transform: scale(1.25) rotate(180deg); }
+  }
+  .sparkle-twinkle { animation: sparkleTwinkle 1.8s ease-in-out infinite; display: inline-block; }
+  /* Big win flame ribbon */
+  @keyframes flamePulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(229,62,62,0.45); }
+    50%      { box-shadow: 0 0 22px rgba(229,62,62,0.85); }
+  }
+  .flame-pulse { animation: flamePulse 1.2s ease-in-out infinite; }
   /* Drawer slide */
   .drawer { transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
   .modal-back { backdrop-filter: blur(8px); }
@@ -387,12 +427,25 @@ function App() {
       {view === 'home' && (
         <>
           <Ticker history={history} />
+          <ActionBar
+            onSubscribe={() => flash('Membership signup coming soon — Wallet Pack, Songs Pack, Game Pack tiers', 'gold')}
+            onScout={() => flash('Talent Scout Program — refer artists and fans, earn commissions. Signup coming soon.', 'gold')}
+          />
           <Hero pending={pendingEntries.length} points={points} onReveal={revealNext} onBrowse={()=>{const el=document.getElementById('catalog'); el && el.scrollIntoView({behavior:'smooth'});}} onFree={()=>setView('freeEntries')} />
           <Catalog
             genre={genre} onGenre={setGenre}
             query={query} onQuery={setQuery}
             playing={playing} onPlay={setPlaying}
             onAdd={addToCart}
+          />
+          <MusicPacks
+            onAdd={(pack) => flash(`Added ${pack.size}-song Music Pack — $${pack.price} · +${pack.credits.toLocaleString()} credits`, 'gold')}
+          />
+          <SurpriseBuckets
+            onAdd={(b) => flash(`Added ${b.size}-song Surprise Bucket — $${b.price} · +${b.credits.toLocaleString()} credits`, 'gold')}
+          />
+          <ConcertAnnouncements
+            onSubscribe={() => flash('Membership signup coming soon — Wallet Pack, Songs Pack, Game Pack tiers', 'gold')}
           />
           <HowItWorks onFree={()=>setView('freeEntries')} />
         </>
@@ -546,23 +599,274 @@ function Ticker({ history }) {
     { who: 'Reggie K.', prize: 1, where: 'Waco' },
     { who: 'Vee S.', prize: 25, where: 'Galveston' },
   ];
-  // Triple for seamless loop
+  // Quadruple for seamless loop at faster speed
   const loop = [...items, ...items, ...items, ...items];
   return (
-    <div className="border-y border-white/5 bg-ink-surface/40 overflow-hidden">
-      <div className="flex marquee-inner whitespace-nowrap py-2 text-sm">
-        {loop.map((w,i) => (
-          <div key={i} className="flex items-center gap-2 px-5 text-mute">
-            <Icon.trophy size={14} className="text-gold"/>
-            <span className="text-slate-200 font-medium">{w.who||'Player'}</span>
-            <span>won</span>
-            <span className="text-gold font-semibold">${w.prize}</span>
-            <span>· {w.where || 'TX'}</span>
-            <span className="text-dim">·</span>
+    <div className="relative border-y-2 border-gold/40 overflow-hidden ticker-bg shadow-[inset_0_0_28px_-6px_rgba(255,182,39,0.45)]">
+      <div className="flex marquee-inner whitespace-nowrap py-3 text-base">
+        {loop.map((w,i) => {
+          const isBig = w.prize >= 1000;
+          return (
+            <div key={i} className="flex items-center gap-3 px-6">
+              <span className="icon-wiggle">
+                <Icon.trophy size={18} className="text-gold"/>
+              </span>
+              <span className="font-semibold tracking-wide text-slate-100">{w.who||'Player'}</span>
+              <span className="text-mute uppercase text-xs tracking-widest">won</span>
+              <span className={`font-display tracking-wider text-2xl prize-glow ${isBig ? 'text-gold-hot' : 'text-gold'}`}>
+                ${w.prize.toLocaleString()}
+              </span>
+              {isBig && (
+                <span className="flame-pulse inline-block px-2 py-0.5 rounded-full text-[10px] uppercase tracking-widest font-bold bg-flame/20 text-flame border border-flame/50">
+                  Big Win
+                </span>
+              )}
+              <span className="text-mute text-xs">in</span>
+              <span className="text-slate-200 font-medium">{w.where || 'TX'}</span>
+              <span className="sparkle-twinkle text-gold mx-2">✦</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACTION BAR — Subscribe · Talent Scout · Talisman
+   ───────────────────────────────────────────────────────────── */
+
+function ActionBar({ onSubscribe, onScout, talismanUrl='https://talisman.bigeasyent.com' }) {
+  const cards = [
+    {
+      key: 'sub',
+      onClick: onSubscribe,
+      tone: 'gold',
+      eyebrow: 'Members get more',
+      title: 'Subscribe',
+      sub: 'Wallet, Songs & Game packs · monthly perks',
+      cta: 'Become a member',
+      iconBg: 'bg-gradient-to-br from-gold-hot to-gold-deep',
+      iconChar: '★',
+      iconColor: 'text-ink',
+      ring: 'shadow-[0_0_28px_-8px_rgba(255,182,39,0.6)] hover:shadow-[0_0_36px_-6px_rgba(255,182,39,0.85)]',
+      border: 'border-gold/40 hover:border-gold/70',
+      bg: 'bg-gradient-to-br from-gold/10 via-gold/5 to-transparent',
+      pill: 'bg-gold/20 text-gold border-gold/40',
+    },
+    {
+      key: 'scout',
+      onClick: onScout,
+      tone: 'win',
+      eyebrow: 'Refer & earn',
+      title: 'Talent Scout Program',
+      sub: 'Bring artists & fans · earn commissions',
+      cta: 'Join the scouts',
+      iconBg: 'bg-gradient-to-br from-emerald-400 to-emerald-700',
+      iconChar: '◆',
+      iconColor: 'text-ink',
+      ring: 'shadow-[0_0_28px_-8px_rgba(16,185,129,0.55)] hover:shadow-[0_0_36px_-6px_rgba(16,185,129,0.85)]',
+      border: 'border-win/40 hover:border-win/70',
+      bg: 'bg-gradient-to-br from-win/10 via-win/5 to-transparent',
+      pill: 'bg-win/20 text-win border-win/40',
+    },
+    {
+      key: 'talisman',
+      href: talismanUrl,
+      tone: 'flame',
+      eyebrow: 'Play now on',
+      title: 'Talisman',
+      sub: 'Use your credits in the play experience',
+      cta: 'Launch Talisman  →',
+      iconBg: 'bg-gradient-to-br from-flame to-flame-deep',
+      iconChar: '▶',
+      iconColor: 'text-white',
+      ring: 'shadow-[0_0_28px_-8px_rgba(229,62,62,0.55)] hover:shadow-[0_0_36px_-6px_rgba(229,62,62,0.95)]',
+      border: 'border-flame/50 hover:border-flame/80',
+      bg: 'bg-gradient-to-br from-flame/15 via-flame/5 to-transparent',
+      pill: 'bg-flame/20 text-flame border-flame/50',
+      extraClass: 'flame-pulse',
+    },
+  ];
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-5 mb-2">
+      <div className="grid sm:grid-cols-3 gap-3">
+        {cards.map(c => {
+          const inner = (
+            <div className={`group relative h-full p-4 sm:p-5 rounded-2xl border-2 ${c.border} ${c.bg} ${c.ring} ${c.extraClass||''} transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden`}>
+              <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-white/5 blur-2xl group-hover:bg-white/10 transition-colors"></div>
+              <div className="flex items-center gap-3 mb-2 relative">
+                <div className={`w-11 h-11 rounded-xl ${c.iconBg} grid place-items-center text-2xl font-display ${c.iconColor} shadow-lg leading-none`}>
+                  {c.iconChar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`inline-block text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${c.pill} mb-1`}>{c.eyebrow}</div>
+                  <div className="font-display text-2xl leading-none tracking-wide truncate">{c.title}</div>
+                </div>
+              </div>
+              <div className="text-sm text-slate-300 mb-3 relative">{c.sub}</div>
+              <div className={`inline-flex items-center gap-1 font-semibold text-sm ${c.tone==='gold' ? 'text-gold' : c.tone==='win' ? 'text-win' : 'text-flame'} group-hover:translate-x-1 transition-transform relative`}>
+                {c.cta}
+              </div>
+            </div>
+          );
+          if (c.href) {
+            return (
+              <a key={c.key} href={c.href} target="_blank" rel="noopener noreferrer" className="block focus:outline-none rounded-2xl">
+                {inner}
+              </a>
+            );
+          }
+          return (
+            <button key={c.key} onClick={c.onClick} className="text-left focus:outline-none rounded-2xl">
+              {inner}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MUSIC PACKS — bulk named bundles
+   ───────────────────────────────────────────────────────────── */
+
+function MusicPacks({ onAdd }) {
+  const packs = [
+    { size: 50,  price: 50,  pp: 1.00, credits: 100,  label: 'Starter' },
+    { size: 100, price: 90,  pp: 0.90, credits: 250,  label: 'Most popular', popular: true },
+    { size: 500, price: 400, pp: 0.80, credits: 1500, label: 'Power pack' },
+  ];
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
+      <div className="mb-6">
+        <Pill color="gold">Music Packs · bulk bundles</Pill>
+        <h2 className="font-display text-3xl sm:text-4xl mt-3">Save on the songs you pick</h2>
+        <p className="text-mute mt-2 max-w-xl">Choose any tracks from the catalog up to your pack size. The bigger the pack, the cheaper each song. Every pack includes bonus play credits.</p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        {packs.map(p => (
+          <div key={p.size} className={`relative rounded-2xl border-2 ${p.popular ? 'border-gold shadow-[0_0_32px_-6px_rgba(255,182,39,0.6)]' : 'border-white/10'} bg-gradient-to-br from-ink-card to-ink-surface p-6 hover:border-gold/60 hover:-translate-y-1 transition-all duration-300`}>
+            {p.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-gold-hot to-gold text-ink text-[10px] font-bold uppercase tracking-widest shadow-lg">{p.label}</div>
+            )}
+            {!p.popular && (
+              <div className="text-[10px] uppercase tracking-widest text-mute mb-2">{p.label}</div>
+            )}
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-6xl text-gold leading-none">{p.size}</span>
+              <span className="text-sm text-mute">songs</span>
+            </div>
+            <div className="text-xs uppercase tracking-widest text-mute mt-1">you pick from the catalog</div>
+            <div className="mt-5 flex items-baseline gap-2">
+              <span className="font-display text-3xl text-slate-100">${p.price}</span>
+              <span className="text-xs text-mute">${p.pp.toFixed(2)}/song</span>
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <span className="text-gold">★</span>
+              <span className="text-slate-200">+{p.credits.toLocaleString()} play credits</span>
+            </div>
+            <GoldButton className="w-full mt-5" onClick={() => onAdd({type:'pack', size:p.size, price:p.price, credits:p.credits})}>Add to cart</GoldButton>
           </div>
         ))}
       </div>
-    </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SURPRISE BUCKETS — random mystery bundles, lower price
+   ───────────────────────────────────────────────────────────── */
+
+function SurpriseBuckets({ onAdd }) {
+  const buckets = [
+    { size: 50,  price: 35,  pp: 0.70, credits: 100,  save: '30%' },
+    { size: 100, price: 60,  pp: 0.60, credits: 250,  save: '33%', best: true },
+    { size: 500, price: 250, pp: 0.50, credits: 1500, save: '38%' },
+  ];
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-6">
+      <div className="mb-6">
+        <Pill color="flame">Surprise Buckets · mystery selection</Pill>
+        <h2 className="font-display text-3xl sm:text-4xl mt-3">Don't pick — let us surprise you</h2>
+        <p className="text-mute mt-2 max-w-xl">Same song counts at a lower price. Our system picks them blind from the catalog. You see what's inside when they arrive in your library.</p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        {buckets.map(b => (
+          <div key={b.size} className={`relative rounded-2xl border-2 ${b.best ? 'border-flame shadow-[0_0_32px_-6px_rgba(229,62,62,0.6)]' : 'border-white/10'} bg-gradient-to-br from-ink-card to-ink-surface p-6 hover:border-flame/60 hover:-translate-y-1 transition-all duration-300 overflow-hidden`}>
+            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-flame/20 text-flame text-[10px] uppercase tracking-widest font-bold border border-flame/40">Save {b.save}</div>
+            {b.best && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-flame to-flame-deep text-white text-[10px] font-bold uppercase tracking-widest shadow-lg">Best value</div>
+            )}
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-6xl text-flame leading-none">?</span>
+              <span className="text-sm text-mute">×{b.size}</span>
+            </div>
+            <div className="text-xs uppercase tracking-widest text-mute mt-1">{b.size} mystery songs · revealed on delivery</div>
+            <div className="mt-5 flex items-baseline gap-2">
+              <span className="font-display text-3xl text-slate-100">${b.price}</span>
+              <span className="text-xs text-mute">${b.pp.toFixed(2)}/song</span>
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <span className="text-gold">★</span>
+              <span className="text-slate-200">+{b.credits.toLocaleString()} play credits</span>
+            </div>
+            <button onClick={() => onAdd({type:'bucket', size:b.size, price:b.price, credits:b.credits})} className="btn-press w-full mt-5 px-4 py-2.5 rounded-xl font-semibold bg-flame/20 text-flame border border-flame/40 hover:bg-flame/30 transition">Surprise me</button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CONCERT ANNOUNCEMENTS — with subscriber free-pass perk
+   ───────────────────────────────────────────────────────────── */
+
+function ConcertAnnouncements({ onSubscribe }) {
+  const concerts = [
+    { artist: 'Hayes Carll',          venue: 'Gruene Hall',         city: 'New Braunfels, TX', month: 'Jun', day: '14', tag: 'Members free' },
+    { artist: 'Charley Crockett',     venue: "Stubb's Amphitheater", city: 'Austin, TX',        month: 'Jul', day: '11', tag: '2-for-1 members' },
+    { artist: 'Vincent Neil Emerson', venue: "Billy Bob's Texas",    city: 'Fort Worth, TX',    month: 'Aug', day: '22', tag: 'Members free' },
+  ];
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+      <div className="rounded-3xl border border-gold/30 bg-gradient-to-br from-ink-surface to-ink-card overflow-hidden shadow-[0_0_40px_-12px_rgba(255,182,39,0.35)]">
+        <div className="grid lg:grid-cols-[1.5fr_1fr]">
+          <div className="p-6 sm:p-8">
+            <Pill color="gold">Live shows</Pill>
+            <h2 className="font-display text-3xl sm:text-4xl mt-3">Texas music on stage</h2>
+            <p className="text-mute mt-2 max-w-xl">Concert announcements drop here first. Subscribers get free or discounted passes to most BES-hosted shows.</p>
+            <div className="mt-6 space-y-3">
+              {concerts.map((c, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 sm:p-4 rounded-2xl bg-ink-surface/60 border border-white/5 hover:border-gold/40 hover:bg-ink-surface/80 transition">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gold-hot to-gold-deep grid place-items-center text-ink flex-shrink-0 shadow-lg">
+                    <div className="text-center leading-none">
+                      <div className="font-display text-2xl">{c.day}</div>
+                      <div className="text-[10px] uppercase tracking-widest font-bold mt-0.5">{c.month}</div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-slate-100 truncate">{c.artist}</div>
+                    <div className="text-xs text-mute truncate">{c.venue} · {c.city}</div>
+                  </div>
+                  <div className="hidden sm:inline-block px-2 py-1 rounded-full bg-gold/20 text-gold text-[10px] uppercase tracking-widest font-bold border border-gold/40 flex-shrink-0">{c.tag}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-gold/20 via-flame/10 to-transparent p-6 sm:p-8 flex flex-col justify-center border-l border-white/5">
+            <div className="text-5xl mb-1">🎟</div>
+            <h3 className="font-display text-2xl mt-2">Subscriber perk</h3>
+            <p className="text-mute mt-2 text-sm">Free passes to most shows · early access to limited-capacity events · members-only meet-and-greets at flagship BES venues.</p>
+            <GoldButton className="mt-5 w-full" onClick={onSubscribe}>Become a member</GoldButton>
+            <div className="text-[10px] text-dim text-center mt-3 uppercase tracking-widest">Cancel anytime</div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1192,6 +1496,39 @@ function ArtistsPage({ onBack }) {
     const tracks = TRACKS.filter(t=>t.artist===name);
     return { name, count: tracks.length, genre: tracks[0].genre, g: tracks[0].g };
   });
+
+  // Artist application form state
+  const [artistName, setArtistName] = useState('');
+  const [bio, setBio] = useState('');
+  const [pictureUrl, setPictureUrl] = useState(null);
+  const [pictureName, setPictureName] = useState('');
+  const [songs, setSongs] = useState([]);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  const onPicture = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    setPictureName(f.name);
+    setPictureUrl(URL.createObjectURL(f));
+  };
+  const onSongs = (e) => {
+    const newSongs = Array.from(e.target.files || []);
+    setSongs(prev => [...prev, ...newSongs]);
+  };
+  const removeSong = (idx) => setSongs(prev => prev.filter((_, i) => i !== idx));
+  const onSubmit = () => {
+    if (!artistName.trim() || !bio.trim() || !pictureUrl || songs.length === 0) {
+      setError('Add your artist name, bio, profile picture, and at least one song.');
+      return;
+    }
+    setError('');
+    setSubmitted(true);
+  };
+  const resetForm = () => {
+    setArtistName(''); setBio(''); setPictureUrl(null); setPictureName(''); setSongs([]); setSubmitted(false); setError('');
+  };
+
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <button onClick={onBack} className="text-mute hover:text-slate-100 inline-flex items-center gap-1 text-sm mb-6"><Icon.back size={16}/> Back</button>
@@ -1211,14 +1548,109 @@ function ArtistsPage({ onBack }) {
         ))}
       </div>
 
-      <div className="mt-12 rounded-3xl border border-gold/20 bg-gradient-to-br from-gold/5 to-flame/5 p-8">
-        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
-          <div>
-            <h3 className="font-display text-3xl">Are you a Texas songwriter?</h3>
-            <p className="text-mute mt-2 max-w-xl">Upload your original tracks. We handle the storefront, the streaming, the payouts. You keep 70%. Refer other artists and earn from their sales too.</p>
+      {/* Artist application + upload form */}
+      <div id="artist-apply" className="mt-12 rounded-3xl border border-gold/30 bg-gradient-to-br from-gold/10 via-gold/5 to-flame/5 p-6 sm:p-8 shadow-[0_0_40px_-12px_rgba(255,182,39,0.35)]">
+        {submitted ? (
+          <div className="text-center py-10">
+            <div className="text-6xl mb-3">✓</div>
+            <h3 className="font-display text-3xl">Application received!</h3>
+            <p className="text-mute mt-2 max-w-xl mx-auto">Welcome to the family, {artistName}. We'll review your {songs.length} song{songs.length!==1?'s':''} and get back to you within 48 hours at the email tied to your account.</p>
+            <div className="mt-6">
+              <button onClick={resetForm} className="text-gold underline text-sm">Submit another artist</button>
+            </div>
           </div>
-          <GoldButton size="lg">Apply to upload</GoldButton>
-        </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <Pill color="gold">Apply to upload</Pill>
+              <h3 className="font-display text-3xl mt-3">Are you a Texas songwriter?</h3>
+              <p className="text-mute mt-2 max-w-xl">Upload your original tracks. We handle the storefront, the streaming, the payouts. You keep 70%. Refer other artists and earn from their sales too.</p>
+            </div>
+
+            <div className="grid md:grid-cols-[220px_1fr] gap-6 items-start">
+              {/* LEFT: Profile picture upload */}
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-mute mb-2">Profile picture</label>
+                <label className="block cursor-pointer group">
+                  <div className="aspect-square w-full rounded-2xl border-2 border-dashed border-gold/40 bg-ink-card hover:border-gold hover:bg-gold/10 transition overflow-hidden grid place-items-center">
+                    {pictureUrl ? (
+                      <img src={pictureUrl} alt="Artist profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center p-4">
+                        <div className="text-5xl mb-2 group-hover:scale-110 transition-transform">📸</div>
+                        <div className="text-xs text-mute uppercase tracking-widest">Upload photo</div>
+                        <div className="text-[10px] text-dim mt-1">JPG or PNG · 1000×1000+</div>
+                      </div>
+                    )}
+                  </div>
+                  <input type="file" accept="image/*" onChange={onPicture} className="hidden" />
+                </label>
+                {pictureName && <div className="text-xs text-mute mt-2 truncate" title={pictureName}>{pictureName}</div>}
+              </div>
+
+              {/* RIGHT: Name + Bio */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-mute mb-2">Artist name</label>
+                  <input
+                    type="text" value={artistName} onChange={e=>setArtistName(e.target.value)}
+                    placeholder="What name do you record under?"
+                    className="w-full px-4 py-3 rounded-xl bg-ink-card border border-white/10 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 text-slate-100 placeholder-dim transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-mute mb-2">Bio</label>
+                  <textarea
+                    value={bio} onChange={e=>setBio(e.target.value)}
+                    placeholder="Where you're from, the style you play, what you're chasing. Two or three sentences."
+                    rows={5}
+                    className="w-full px-4 py-3 rounded-xl bg-ink-card border border-white/10 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30 text-slate-100 placeholder-dim resize-y transition"
+                  />
+                  <div className="text-[10px] text-dim mt-1">{bio.length} characters · keep it human</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Songs upload */}
+            <div className="mt-6">
+              <label className="block text-xs uppercase tracking-widest text-mute mb-2">Upload songs</label>
+              <label className="block cursor-pointer group">
+                <div className="rounded-2xl border-2 border-dashed border-gold/40 hover:border-gold hover:bg-gold/10 transition p-6 sm:p-8 bg-ink-card">
+                  <div className="text-center">
+                    <div className="text-5xl mb-2 group-hover:scale-110 transition-transform">🎵</div>
+                    <div className="font-semibold text-slate-100">Drop songs here, or click to browse</div>
+                    <div className="text-xs text-mute mt-1">MP3, WAV or FLAC · up to 50 MB each · pick as many as you want</div>
+                  </div>
+                </div>
+                <input type="file" accept="audio/*" multiple onChange={onSongs} className="hidden" />
+              </label>
+              {songs.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {songs.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-ink-card border border-white/5">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gold-hot to-gold-deep grid place-items-center text-ink font-display text-xl leading-none">♪</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-slate-100 truncate">{s.name}</div>
+                        <div className="text-xs text-mute">{(s.size / 1024 / 1024).toFixed(2)} MB</div>
+                      </div>
+                      <button onClick={() => removeSong(i)} className="w-8 h-8 grid place-items-center rounded-lg text-mute hover:text-flame hover:bg-flame/10 transition" title="Remove">✕</button>
+                    </div>
+                  ))}
+                  <div className="text-xs text-mute pl-1">{songs.length} song{songs.length!==1?'s':''} ready</div>
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="mt-4 px-4 py-3 rounded-xl bg-flame/10 border border-flame/40 text-flame text-sm">{error}</div>
+            )}
+
+            <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <span className="text-xs text-mute">By submitting, you confirm you own the rights to your music and have read our artist terms.</span>
+              <GoldButton size="lg" onClick={onSubmit}>Submit application</GoldButton>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
